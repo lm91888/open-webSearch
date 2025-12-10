@@ -4,4 +4,5 @@ export interface SearchResult {
     description: string;
     source: string;
     engine: string;
+    publishDate?: string;  // 发布日期，如 "2024年3月8日"
 }

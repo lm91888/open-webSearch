@@ -15,6 +15,7 @@ import {searchBrave} from "../engines/brave/index.js";
 import {fetchGithubReadme} from "../engines/github/index.js";
 import { fetchJuejinArticle } from "../engines/juejin/fetchJuejinArticle.js";
 import { searchJuejin } from "../engines/juejin/index.js";
+import { searchPolicy, searchPolicyAdvanced } from "../engines/policy/index.js";
 
 // 支持的搜索引擎
 const SUPPORTED_ENGINES = ['baidu', 'bing', 'linuxdo', 'csdn', 'duckduckgo','exa','brave','juejin'] as const;
@@ -369,6 +370,106 @@ export const setupTools = (server: McpServer): void => {
                     content: [{
                         type: 'text',
                         text: `Failed to fetch article: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    // 政策搜索工具
+    const searchPolicyToolName = getToolName('MCP_TOOL_SEARCH_POLICY_NAME', 'searchPolicy');
+    server.tool(
+        searchPolicyToolName,
+        "Search for government policy documents using multiple search engines with intelligent filtering",
+        {
+            keyword: z.string().min(1, "Search keyword must not be empty"),
+            limit: z.number().min(1).max(50).default(10),
+            region: z.string().optional().describe("Region filter, e.g., '江西省', '北京市'"),
+            engines: z.array(z.enum(['baidu', 'bing'])).default(['baidu', 'bing']),
+            minScore: z.number().min(0).max(100).default(30).describe("Minimum policy relevance score (0-100)"),
+            governmentOnly: z.boolean().default(false).describe("Only return results from government websites")
+        },
+        async ({ keyword, limit = 10, region, engines = ['baidu', 'bing'], minScore = 30, governmentOnly = false }) => {
+            try {
+                console.error(`Searching for policy: "${keyword}"${region ? ` in ${region}` : ''}`);
+                
+                const results = await searchPolicy(keyword, limit, {
+                    region,
+                    engines,
+                    minScore,
+                    governmentOnly
+                });
+
+                return {
+                    content: [{
+                        type: 'text',
+                        text: JSON.stringify({
+                            query: keyword,
+                            region: region || 'all',
+                            engines: engines,
+                            filters: {
+                                minScore,
+                                governmentOnly
+                            },
+                            totalResults: results.length,
+                            results: results
+                        }, null, 2)
+                    }]
+                };
+            } catch (error) {
+                console.error('Policy search tool execution failed:', error);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Policy search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    // 高级政策搜索工具
+    const searchPolicyAdvancedToolName = getToolName('MCP_TOOL_SEARCH_POLICY_ADVANCED_NAME', 'searchPolicyAdvanced');
+    server.tool(
+        searchPolicyAdvancedToolName,
+        "Advanced search for policy documents with site and file type filters",
+        {
+            keyword: z.string().min(1, "Search keyword must not be empty"),
+            limit: z.number().min(1).max(50).default(10),
+            site: z.string().optional().describe("Specific website domain, e.g., 'www.gov.cn', 'miit.gov.cn', 'jiangxi.gov.cn'"),
+            fileType: z.string().optional().describe("File type filter, e.g., 'pdf', 'doc', 'docx'")
+        },
+        async ({ keyword, limit = 10, site, fileType }) => {
+            try {
+                console.error(`Advanced policy search: "${keyword}"${site ? ` site:${site}` : ''}${fileType ? ` filetype:${fileType}` : ''}`);
+                
+                const results = await searchPolicyAdvanced(keyword, limit, {
+                    site,
+                    fileType
+                });
+
+                return {
+                    content: [{
+                        type: 'text',
+                        text: JSON.stringify({
+                            query: keyword,
+                            filters: {
+                                site,
+                                fileType
+                            },
+                            totalResults: results.length,
+                            results: results
+                        }, null, 2)
+                    }]
+                };
+            } catch (error) {
+                console.error('Advanced policy search tool execution failed:', error);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Advanced policy search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
                     }],
                     isError: true
                 };

@@ -1,39 +1,46 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { SearchResult } from '../../types.js';
+import { fileURLToPath } from 'url';
+import { resolve } from 'path';
 
 export async function searchBing(query: string, limit: number): Promise<SearchResult[]> {
     let allResults: SearchResult[] = [];
     let pn = 0;
-
+    console.log("bing")
     while (allResults.length < limit) {
+        // 简化参数，使用更真实的浏览器请求
         const response = await axios.get('https://www.bing.com/search', {
             params: {
                 q: query,
                 first: 1 + pn * 10
             },
             headers: {
-                "authority": "www.bing.com",
-                "ect": "3g",
-                "pragma": "no-cache",
-                "sec-ch-ua-arch": "\"x86\"",
-                "sec-ch-ua-bitness": "\"64\"",
-                "sec-ch-ua-full-version": "\"112.0.5615.50\"",
-                "sec-ch-ua-full-version-list": "\"Chromium\";v=\"112.0.5615.50\", \"Google Chrome\";v=\"112.0.5615.50\", \"Not:A-Brand\";v=\"99.0.0.0\"",
-                "sec-ch-ua-model": "\"\"",
-                "sec-ch-ua-platform-version": "\"15.0.0\"",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1",
-                "Cookie": "MUID=3727DBB14FD763511D80CDBD4ED262EF; MSPTC=5UlNf4UsLqV53oFqqdHiR26FwDDL8zSW3kC74kIJQfM; _EDGE_S=SID=132F08F578E06F832D931EE779E16E2D; MUIDB=3727DBB14FD763511D80CDBD4ED262EF; SRCHD=AF=NOFORM; SRCHUID=V=2&GUID=B3AFD0E41DB649E39803C690946C3B65&dmnchg=1; ak_bmsc=578AE2B7DA55FA9F332ADCDFBA0B9B64~000000000000000000000000000000~YAAQZCg0F9XLkYGXAQAAjywwkhxcD6Pm2nguBmpB14hnmCR3kz9Mfau5cZ7pwHxdU2Uog9+6hOkBmzpOV3UoTOhi52nB725xM7zN90mRDv0zQtJdO/llaKlt2zqTmB4F5kd+GzPjXLAN4Zmj4KwpAjLK1T4TexH/9WlQTkRamdJTKuR47IZWHHebqsbNqHoYncHhxICO9Rnu51vhlps/rrhPBtgPgbrQnDfr6YzAQWmSqc5g9hk03sM9nnWUyVbRV0ZVsgke7BCYX5V1JD5L0Zf8/FWdntBpjpd2IcmehBz38ChGThPrBEWNCZQbCS6lE4OaQanrrdmBHf/r5YEf2LeIqZy0bJGIiSQaSh6d7KFO2haTQk/JscZAs+V5kNsAOxIGreRve+E=; _UR=QS=0&TQS=0&Pn=0; BFBUSR=BFBHP=0; SRCHUSR=DOB=20250621&DS=1; _Rwho=u=d&ts=2025-06-21; ipv6=hit=1750507922628&t=4; BFPRResults=FirstPageUrls=C5E678E900F98310F0D3DB1F3EB96D99%2CB5A20FAE72B0C3019A56409EAC7AF3FB%2C7A44A77FF42EDF11CC9BF5CFE08B179A%2C6ED615E5E634BD5AFC7BB2A0A77F8FF8%2CA993E7AAF4890BEC06882621CA376D00%2C49CF0FC3C203D5E918A76258506B0CF4%2C7F03D5026C1D046F66B11D525095BF8B%2C058BB67A6B7F15E58D3A19B897BC57F8%2C1B886024FDE703428D24A41AFA1E62AF%2C5A8B56DC0AE03A8B94643DEA2A22DBAC&FPIG=05F126AA95514CF5AD5E33E4AEBA474D; _HPVN=CS=eyJQbiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiUCJ9LCJTYyI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiSCJ9LCJReiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiVCJ9LCJBcCI6dHJ1ZSwiTXV0ZSI6dHJ1ZSwiTGFkIjoiMjAyNS0wNi0yMVQwMDowMDowMFoiLCJJb3RkIjowLCJHd2IiOjAsIlRucyI6MCwiRGZ0IjpudWxsLCJNdnMiOjAsIkZsdCI6MCwiSW1wIjoxNSwiVG9ibiI6MH0=; _C_ETH=1; _RwBf=r=0&ilt=15&ihpd=1&ispd=14&rc=36&rb=0&rg=200&pc=36&mtu=0&rbb=0&clo=0&v=15&l=2025-06-21T07:00:00.0000000Z&lft=0001-01-01T00:00:00.0000000&aof=0&ard=0001-01-01T00:00:00.0000000&rwdbt=0&rwflt=0&rwaul2=0&g=&o=2&p=&c=&t=0&s=0001-01-01T00:00:00.0000000+00:00&ts=2025-06-21T11:36:08.7064260+00:00&rwred=0&wls=&wlb=&wle=&ccp=&cpt=&lka=0&lkt=0&aad=0&TH=&cid=0&gb=; _SS=SID=132F08F578E06F832D931EE779E16E2D&R=36&RB=0&GB=0&RG=200&RP=36; SRCHHPGUSR=SRCHLANG=zh-Hans&IG=63A0A44F5D2F4499AD165A366D073C03&DM=0&BRW=N&BRH=T&CW=1202&CH=1289&SCW=1185&SCH=2279&DPR=1.0&UTC=480&HV=1750505768&HVE=notFound&WTS=63886101120&PV=15.0.0&PRVCW=1202&PRVCH=1289&EXLTT=13; SRCHHPGUSR=SRCHLANG=en&IG=9A53F826E9C9432497327CA995144E14&DM=0&BRW=N&BRH=T&CW=1202&CH=1289&SCW=1185&SCH=2279&DPR=1.0&UTC=480&HV=1750505768&HVE=notFound&WTS=63886101120&PV=15.0.0&PRVCW=1202&PRVCH=1289&EXLTT=13",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
-                "Accept": "*/*",
-                "Host": "cn.bing.com",
-                "Connection": "keep-alive"
-            }
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0',
+                'Referer': 'https://www.bing.com/'
+            },
+            timeout: 10000
         });
 
         const $ = cheerio.load(response.data);
         const results: SearchResult[] = [];
+
+        // 保存 HTML 到文件
+        // const fs = await import('fs');
+        // const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        // const filename = `bing-response-pn${pn}-${timestamp}.html`;
+        // await fs.promises.writeFile(filename, response.data, 'utf-8');
+        // console.log(`💾 HTML 已保存到: ${filename}`);
 
         $('#b_content').children()
             .find('#b_results').children()
@@ -47,12 +54,35 @@ export async function searchBing(query: string, limit: number): Promise<SearchRe
                     if (url && url.startsWith('http')) {
 
                         const sourceElement = $(element).find('.b_tpcn');
+                        
+                        // 提取发布日期（Bing通常在 .b_caption 或 .b_attribution 中）
+                        let publishDate = '';
+                        const captionElement = $(element).find('.b_caption, .b_attribution');
+                        const captionText = captionElement.text();
+                        
+                        // 匹配多种日期格式
+                        const datePatterns = [
+                            /\d{4}年\d{1,2}月\d{1,2}日/,  // 2024年3月8日
+                            /\d{4}-\d{1,2}-\d{1,2}/,      // 2024-03-08
+                            /\d{1,2}\/\d{1,2}\/\d{4}/,    // 3/8/2024
+                            /\d{4}\.\d{1,2}\.\d{1,2}/     // 2024.03.08
+                        ];
+                        
+                        for (const pattern of datePatterns) {
+                            const match = captionText.match(pattern);
+                            if (match) {
+                                publishDate = match[0];
+                                break;
+                            }
+                        }
+                        
                         results.push({
                             title: titleElement.text(),
                             url: url,
                             description: snippetElement.text().trim() || '',
                             source: sourceElement.text().trim() || '',
-                            engine: 'bing'
+                            engine: 'bing',
+                            publishDate: publishDate || undefined
                         });
                     }
                 }
@@ -69,4 +99,36 @@ export async function searchBing(query: string, limit: number): Promise<SearchRe
     }
 
     return allResults.slice(0, limit); // 截取最多 limit 个
+}
+
+// 单文件运行入口
+async function main() {
+    const args = process.argv.slice(2);
+    const query = args[0] || '江西省1269行动计划12条重点产业链相关政策';
+    const limit = parseInt(args[1]) || 10;
+
+    console.log(`🔍 开始搜索: "${query}", 限制: ${limit} 条结果\n`);
+    
+    try {
+        const results = await searchBing(query, limit);
+        console.log(`✅ 成功获取 ${results.length} 条结果:\n`);
+        
+        results.forEach((result, index) => {
+            console.log(`${index + 1}. ${result.title}`);
+            console.log(`   URL: ${result.url}`);
+            console.log(`   来源: ${result.source}`);
+            console.log(`   描述: ${result.description.substring(0, 100)}...`);
+            console.log('');
+        });
+    } catch (error) {
+        console.error('❌ 搜索失败:', error);
+        process.exit(1);
+    }
+}
+
+// 检测是否直接运行此文件
+const currentFilePath = fileURLToPath(import.meta.url);
+const scriptPath = resolve(process.argv[1]);
+if (currentFilePath === scriptPath) {
+    main();
 }
